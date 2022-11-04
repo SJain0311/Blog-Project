@@ -4,13 +4,14 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
 import { storage, db, auth } from "../firebaseConfig";
 import { toast } from "react-toastify";
+import { ReactDOM } from "react-dom";
 
 const BlogAdd = () => {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     image: "",
-    type: "",
+    type:[],
     createdAt: Timestamp.now().toDate(),
   });
 
@@ -19,14 +20,17 @@ const BlogAdd = () => {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
   const handleBlogType = (e) => {
     const target = e.target;
     const name = target.name;
     const value = target.type === "checkbox" ? target.checked : target.value;
+    console.log("check",value)
     setFormData({
       ...formData,
       [name]: value,
    })
+   console.log("form check value",formData)
  };
 
   const handleImageChange = (e) => {
@@ -62,19 +66,20 @@ const BlogAdd = () => {
           title: "",
           description: "",
           image: "",
-          type: "",
+          type: [],
         });
 
         getDownloadURL(uploadImage.snapshot.ref).then((url) => {
           const blogRef = collection(db, "Blogs");
+          // blogRef.where('type','array-contains-any',['a','b','c','d'])
           addDoc(blogRef, {
             title: formData.title,
             description: formData.description,
             type: formData.type,
             image: url,
             createdAt: Timestamp.now().toDate(),
-
           })
+        
             .then(() => {
               toast("Blog added successfully", { type: "success" });
               setProgress(0);
@@ -86,10 +91,24 @@ const BlogAdd = () => {
       }
     );
   };
+  const handleEditChange = (event) => {
+   
+  };
+
+  const handleEditSubmit = (event) => {
+ 
+  };
+
+  const handleEditClick = (event) => {
+   
+  };
+  
 
   return (
     <div className="border p-3 mt-3 bg-light" style={{ position: "fixed" }}>
       <>
+
+      
         <h2>Create article</h2>
         <div className="form-group">
           <label htmlFor="">Title</label>
