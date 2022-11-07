@@ -1,37 +1,56 @@
-import React, { useState } from "react";
-import { Timestamp, collection, addDoc } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-
+import {
+  Timestamp,
+  addDoc,
+  collection,
+  onSnapshot,
+  updateDoc,
+  doc,
+  getDoc,
+} from "firebase/firestore";
 import { storage, db, auth } from "../firebaseConfig";
 import { toast } from "react-toastify";
 import { ReactDOM } from "react-dom";
+import { async } from "@firebase/util";
+import { useParams } from "react-router-dom";
+
+const checkboxes = [
+  { id: 1, text: "Electronics" },
+  { id: 2, text: "Fashion" },
+  { id: 3, text: "Utiltities" },
+  { id: 4, text: "Hygeine" },
+];
+
 
 const BlogAdd = () => {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     image: "",
-    type:[],
+    type: [],
     createdAt: Timestamp.now().toDate(),
   });
+  const {id}=useParams();
+  const [selectedCheckbox, setSelectedCheckbox] = useState([]);
 
   const [progress, setProgress] = useState(0);
+
+  const handleCheckChange = (id) => {
+    const findIdx = selectedCheckbox.indexOf(id);
+
+    let selected;
+    if (findIdx > -1) {
+      selected = selectedCheckbox.filter((checkboxId) => checkboxId !== id);
+    } else {
+      selected = [...selectedCheckbox, id];
+    }
+    setSelectedCheckbox(selected);
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
-  const handleBlogType = (e) => {
-    const target = e.target;
-    const name = target.name;
-    const value = target.type === "checkbox" ? target.checked : target.value;
-    console.log("check",value)
-    setFormData({
-      ...formData,
-      [name]: value,
-   })
-   console.log("form check value",formData)
- };
 
   const handleImageChange = (e) => {
     setFormData({ ...formData, image: e.target.files[0] });
@@ -70,46 +89,75 @@ const BlogAdd = () => {
         });
 
         getDownloadURL(uploadImage.snapshot.ref).then((url) => {
-          const blogRef = collection(db, "Blogs");
-          // blogRef.where('type','array-contains-any',['a','b','c','d'])
-          addDoc(blogRef, {
-            title: formData.title,
-            description: formData.description,
-            type: formData.type,
-            image: url,
-            createdAt: Timestamp.now().toDate(),
+     if(!id){
+      try{
+        const blogRef = collection(db, "Blogs");
+        // blogRef.where('type','array-contains-any',['a','b','c','d'])
+        addDoc(blogRef, {
+          title: formData.title,
+          description: formData.description,
+          type: formData.type,
+          image: url,
+          type: selectedCheckbox,
+          createdAt: Timestamp.now().toDate(),
+        });
+        console
+          .log("addDoc", addDoc)
+          .then(() => {
+            toast("Blog added successfully", { type: "success" });
+            setProgress(0);
           })
-        
-            .then(() => {
-              toast("Blog added successfully", { type: "success" });
-              setProgress(0);
-            })
-            .catch((err) => {
-              toast("Error adding article", { type: "error" });
-            });
+          .catch((err) => {
+            toast("Error adding article", { type: "error" });
+          });
+      }
+      catch(error){
+        console.log(error);
+      }
+    }
+      else{
+        const blogRef = collection(db, "Blogs",id);
+        // blogRef.where('type','array-contains-any',['a','b','c','d'])
+        updateDoc(blogRef, {
+          title: formData.title,
+          description: formData.description,
+          type: formData.type,
+          image: url,
+          type: selectedCheckbox,
+          createdAt: Timestamp.now().toDate(),
+        });
+        console
+          .log("addDoc", addDoc)
+          .then(() => {
+            toast("Blog added successfully", { type: "success" });
+            setProgress(0);
+          })
+          .catch((err) => {
+            toast("Error adding article", { type: "error" });
+          });
+      }  
+   
         });
       }
     );
   };
-  const handleEditChange = (event) => {
-   
-  };
 
-  const handleEditSubmit = (event) => {
- 
-  };
+  useEffect(() => {
+    id && getSingleUser();
+  }, [id]);
 
-  const handleEditClick = (event) => {
-   
+  const getSingleUser = async () => {
+    const docRef = doc(db, "Blogs", id);
+    const snapshot = await getDoc(docRef);
+    if (snapshot.exists()) {
+      setFormData({ ...snapshot, formData });
+    }
   };
-  
 
   return (
     <div className="border p-3 mt-3 bg-light" style={{ position: "fixed" }}>
       <>
-
-      
-        <h2>Create article</h2>
+        <h2>Create Blog</h2>
         <div className="form-group">
           <label htmlFor="">Title</label>
           <input
@@ -142,58 +190,16 @@ const BlogAdd = () => {
 
         <div className="chechBox mt-4">
           <p>Blog Type Select</p>
-          <div className="form-check">
-            <input
-              className="form-check-input"
-              type="checkbox"
-              name="electronics"
-              id="checkbox1"
-              onChange={handleBlogType}
-              checked={formData.electronics}
-            />
-            <label className="form-check-label" htmlFor="checkBox1">
-              Electronics
+          {checkboxes.map((checkbox) => (
+            <label key={checkbox.id}>
+              {checkbox.text}
+              <input
+                type="checkbox"
+                onChange={() => handleCheckChange(checkbox.text)}
+                selected={selectedCheckbox.includes(checkbox.text)}
+              />
             </label>
-          </div>
-          <div className="form-check">
-            <input
-              className="form-check-input"
-              type="checkbox"
-              name="fashion"
-              id="checkBox2"
-              onChange={handleBlogType}
-              checked={formData.fashion}
-            />
-            <label className="form-check-label" htmlFor="checkBox2">
-              Fashion
-            </label>
-          </div>
-          <div className="form-check">
-            <input
-              className="form-check-input"
-              type="checkbox"
-              name="utiltities"
-              id="checkBox3"
-              onChange={handleBlogType}
-              checked={formData.utiltities}
-            />
-            <label className="form-check-label" htmlFor="checkBox3">
-              Utiltities
-            </label>
-          </div>
-          <div className="form-check">
-            <input
-              className="form-check-input"
-              type="checkbox"
-              name="hygeine"
-              id="checkBox4"
-              onChange={handleBlogType}
-              checked={formData.hygeine}
-            />
-            <label className="form-check-label" htmlFor="checkBox4">
-              Hygeine
-            </label>
-          </div>
+          ))}
         </div>
 
         {progress === 0 ? null : (

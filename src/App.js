@@ -5,6 +5,7 @@ import BlogAdd from './component/BlogAdd';
 import Navbar from './component/Navbar';
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Login from './component/Login';
+import Edit from './component/Edit';
 
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
     <Router>
     <Routes>
       <Route path="/" element={<Login />} />
+      <Route path='/blog/edit/:id' element={<Edit/>}  />
       <Route
         path="/blog"
         element={
