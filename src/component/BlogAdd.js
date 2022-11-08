@@ -11,9 +11,7 @@ import {
 } from "firebase/firestore";
 import { storage, db, auth } from "../firebaseConfig";
 import { toast } from "react-toastify";
-import { ReactDOM } from "react-dom";
-import { async } from "@firebase/util";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 const checkboxes = [
   { id: 1, text: "Electronics" },
@@ -22,8 +20,8 @@ const checkboxes = [
   { id: 4, text: "Hygeine" },
 ];
 
-
 const BlogAdd = () => {
+  const [baseImage, setBaseImage] = useState("");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -31,7 +29,9 @@ const BlogAdd = () => {
     type: [],
     createdAt: Timestamp.now().toDate(),
   });
-  const {id}=useParams();
+  const [data, setData] = useState([]);
+  const { id, title, description, type, image } = useParams();
+  let navigate = useNavigate();
   const [selectedCheckbox, setSelectedCheckbox] = useState([]);
 
   const [progress, setProgress] = useState(0);
@@ -57,107 +57,138 @@ const BlogAdd = () => {
   };
 
   const handlePublish = () => {
+    navigate("/blog");
     if (!formData.title || !formData.description) {
       alert("Please fill all the fields");
       return;
     }
 
-    const storageRef = ref(
-      storage,
-      `/images/${Date.now()}${formData.image.name}`
-    );
+    // const storageRef = ref(
+    //   storage,
+    //   `/images/${Date.now()}${formData.image.name}`
+    // );
 
-    const uploadImage = uploadBytesResumable(storageRef, formData.image);
+    // const uploadImage = uploadBytesResumable(storageRef, formData.image);
+    // const uploadTask = storage
+    //   .ref(`/images/${formData.image.name}`)
+    //   .put(formData.image);
+    // uploadImage.on(
+    //   "state_changed",
+    //   (snapshot) => {
+    //     const progressPercent = Math.round(
+    //       (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+    //     );
+    //     setProgress(progressPercent);
+    //   },
+    //   (err) => {
+    //     console.log(err);
+    //   },
+    //   () => {
+    //     setFormData({
+    //       title: "",
+    //       description: "",
+    //       image: "",
+    //       type: [],
+    //     });
 
-    uploadImage.on(
-      "state_changed",
-      (snapshot) => {
-        const progressPercent = Math.round(
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100
-        );
-        setProgress(progressPercent);
-      },
-      (err) => {
-        console.log(err);
-      },
-      () => {
-        setFormData({
-          title: "",
-          description: "",
-          image: "",
-          type: [],
-        });
+        // getDownloadURL(uploadImage.snapshot.ref).then((url) => {
+        //   image([url]);
+        //   updateDoc(auth.currentUser, { image: `${image[0]}` }).then(() => {
+        //     image(image[0]);
+        //   });
+          if (id===undefined) {
+            try {
+              const blogRef = collection(db, "Blogs");
+            
+              addDoc(blogRef, {
+                title: formData.title,
+                description: formData.description,
+                type: formData.type,
+                image: baseImage,
+                type: selectedCheckbox,
+                createdAt: Timestamp.now().toDate(),
+              });
+              console
+                .log("addDoc", addDoc)
+                .then(() => {
+                  toast("Blog added successfully", { type: "success" });
+                  setProgress(0);
+                  // navigate("/blog")
+                })
+                .catch((err) => {
+                  toast("Error adding article", { type: "error" });
+                });
+            } catch (error) {
+              console.log(error);
+            }
+          } else {
+            console.log("Update here");
+            const editRef = doc(db, "Blogs", id);
+            updateDoc(editRef, {
+              id: id,
+              title: formData.title,
+              description: formData.description,
+              type: formData.type,
+              image: baseImage,
+              type: selectedCheckbox,
+              createdAt: Timestamp.now().toDate(),
+            });
+            console.log("Update here");
+            console
+              .log("addDoc", updateDoc)
+              .then(() => {
+                toast("Blog updateDoc successfully", { type: "success" });
+                setProgress(0);
+              })
+              .catch((err) => {
+                toast("Error updateDoc article", { type: "error" });
+              });
+          }
+        // });
+      }
+    // );
+  
 
-        getDownloadURL(uploadImage.snapshot.ref).then((url) => {
-     if(!id){
-      try{
-        const blogRef = collection(db, "Blogs");
-        // blogRef.where('type','array-contains-any',['a','b','c','d'])
-        addDoc(blogRef, {
-          title: formData.title,
-          description: formData.description,
-          type: formData.type,
-          image: url,
-          type: selectedCheckbox,
-          createdAt: Timestamp.now().toDate(),
-        });
-        console
-          .log("addDoc", addDoc)
-          .then(() => {
-            toast("Blog added successfully", { type: "success" });
-            setProgress(0);
-          })
-          .catch((err) => {
-            toast("Error adding article", { type: "error" });
-          });
-      }
-      catch(error){
-        console.log(error);
-      }
-    }
-      else{
-        const blogRef = collection(db, "Blogs",id);
-        // blogRef.where('type','array-contains-any',['a','b','c','d'])
-        updateDoc(blogRef, {
-          title: formData.title,
-          description: formData.description,
-          type: formData.type,
-          image: url,
-          type: selectedCheckbox,
-          createdAt: Timestamp.now().toDate(),
-        });
-        console
-          .log("addDoc", addDoc)
-          .then(() => {
-            toast("Blog added successfully", { type: "success" });
-            setProgress(0);
-          })
-          .catch((err) => {
-            toast("Error adding article", { type: "error" });
-          });
-      }  
-   
-        });
-      }
-    );
+
+  const uploadImage = async (e) => {
+    const file = e.target.files[0];
+    const base64 = await convertBase64(file);
+    setBaseImage(base64);
+  };
+
+  const convertBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const fileReader = new FileReader();
+      fileReader.readAsDataURL(file);
+
+      fileReader.onload = () => {
+        resolve(fileReader.result);
+      };
+
+      fileReader.onerror = (error) => {
+        reject(error);
+      };
+    });
   };
 
   useEffect(() => {
     id && getSingleUser();
+    console.log("hello", id);
   }, [id]);
 
   const getSingleUser = async () => {
     const docRef = doc(db, "Blogs", id);
     const snapshot = await getDoc(docRef);
+    console.log("fromdata", docRef);
     if (snapshot.exists()) {
-      setFormData({ ...snapshot, formData });
+      setFormData({ ...snapshot.data() });
     }
   };
 
   return (
     <div className="border p-3 mt-3 bg-light" style={{ position: "fixed" }}>
       <>
-        <h2>Create Blog</h2>
+        {id ? "Update Blog" : "Create Blog"}
         <div className="form-group">
           <label htmlFor="">Title</label>
           <input
@@ -180,13 +211,23 @@ const BlogAdd = () => {
 
         {/* image */}
         <label htmlFor="">Image</label>
-        <input
+        {/* <input
           type="file"
           name="image"
           accept="image/*"
           className="form-control"
           onChange={(e) => handleImageChange(e)}
+        /> */}
+
+        <input
+          type="file"
+          onChange={(e) => {
+            uploadImage(e);
+          }}
         />
+        <br></br>
+        {/* <img src={`data:image/jpeg;base64,${data}`} /> */}
+        <img src={baseImage} height="200px" />
 
         <div className="chechBox mt-4">
           <p>Blog Type Select</p>
@@ -216,7 +257,7 @@ const BlogAdd = () => {
           className="form-control btn-primary mt-2"
           onClick={handlePublish}
         >
-          Publish
+          {id ? "Update" : "Submit"}
         </button>
       </>
     </div>

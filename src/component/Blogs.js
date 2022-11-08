@@ -33,6 +33,7 @@ const Blog = () => {
         ...doc.data(),
       }));
       setBlog(blogs);
+      console.log("snapshot",);
       console.log("blogs", blogs);
     });
   }, []);
@@ -40,6 +41,7 @@ const Blog = () => {
 
   return (
     <div>
+      <Link to="/addBlog"><button >AddBlog</button></Link>
       <div className="search-box">
         <input
           id="search-box"
@@ -109,7 +111,10 @@ const Blog = () => {
                         >
                           Edit
                         </button> */}
-                        <button onClick={()=> navigate('/blog') }>Edit</button>
+                     {id&& id===id && (
+                        <button onClick={()=>navigate("/addBlog/"+id,{title:title})
+                      }>Edit</button>
+                     )}
                       </div>
                     </div>
                     <h3>{title}</h3>

@@ -7,7 +7,7 @@ import { deleteObject, ref } from "firebase/storage";
 
 const Delete = (id, image) => {
   const handleDelete = async () => {
-    if (window.confirm("Are you sure you want to delete this article?")) {
+    if (window.confirm("Are you sure you want to delete this blog?")) {
       try {
         await deleteDoc(doc(db, "Blogs", id.id));
         console.log("delete handle",deleteDoc)
