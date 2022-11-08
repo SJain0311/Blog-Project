@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { db } from "../firebaseConfig";
-import { useParams,useNavigate } from "react-router-dom";
+import { db, auth } from "../firebaseConfig";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   getFirestore,
   collection,
@@ -11,16 +11,13 @@ import {
   doc,
 } from "firebase/firestore";
 import Delete from "./Delete";
-import Edit from "./Edit";
 import { Link } from "react-router-dom";
-import { type } from "@testing-library/user-event/dist/type";
+import { signOut } from "firebase/auth";
 
 const Blog = () => {
   const { id } = useParams();
   let navigate = useNavigate();
   const [selectedCheckbox, setSelectedCheckbox] = useState([]);
-  const [openAddModal, setOpenAddModal] = useState(false);
-  const [tasks, setTasks] = useState([]);
   const [blogs, setBlog] = useState([]);
   const [search, setSearch] = useState("");
 
@@ -33,15 +30,24 @@ const Blog = () => {
         ...doc.data(),
       }));
       setBlog(blogs);
-      console.log("snapshot",);
+      console.log("snapshot");
       console.log("blogs", blogs);
     });
   }, []);
   const db = getFirestore();
 
+  const logout = async () => {
+    navigate("/")
+    await signOut(auth);
+  };
+
   return (
     <div>
-      <Link to="/addBlog"><button >AddBlog</button></Link>
+      <div style={{textAlign:'right'}} className="mt-2 mx-2">
+      <Link to="/addBlog">
+        <button className="btn btn-primary ">AddBlog</button>
+      </Link>
+      </div>
       <div className="search-box">
         <input
           id="search-box"
@@ -70,7 +76,6 @@ const Blog = () => {
               type,
               createdAt,
               createdBy,
-              userId,
             }) => (
               <div className="border mt-3 p-3 bg-light" key={id}>
                 <div className="row">
@@ -92,29 +97,16 @@ const Blog = () => {
                         <Delete id={id} image={image} />
                       </div>
                       <div className="col-6 d-flex flex-row-reverse">
-                        {/* <Link to={"/blog/edit/"+id}
-                        class="mr-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 border border-blue-500 rounded"
-                        >Edit
-                    </Link> */}
-                        {/* <button
-                          onClick={() => {
-                            const docRef = doc(db, "Blogs", id);
-                            updateDoc(docRef, {title:title})
-                            .then(docRef => {
-                                console.log("A New Document Field has been added to an existing document");
-                            })
-                            .catch(error => {
-                                console.log(error);
-                            })
-                            console.log("id: ", id);
-                          }}
-                        >
-                          Edit
-                        </button> */}
-                     {id&& id===id && (
-                        <button onClick={()=>navigate("/addBlog/"+id,{title:title})
-                      }>Edit</button>
-                     )}
+                        {id && id === id && (
+                          <button
+                          className="btn btn-primary"
+                            onClick={() =>
+                              navigate("/addBlog/" + id, {id:id, title: title,description:description,image:image })
+                            }
+                          >
+                            Edit
+                          </button>
+                        )}
                       </div>
                     </div>
                     <h3>{title}</h3>
@@ -122,10 +114,16 @@ const Blog = () => {
                     <h5>{type}</h5>
                   </div>
                 </div>
+         
               </div>
             )
           )
       )}
+         <div className="mt-4 mx-4" style={{textAlign:'right'}}>
+      <button className="btn btn-dark" onClick={logout} >
+        SignOut
+      </button>
+      </div>
     </div>
   );
 };

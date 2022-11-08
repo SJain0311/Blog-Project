@@ -21,7 +21,6 @@ const checkboxes = [
 ];
 
 const BlogAdd = () => {
-  const [baseImage, setBaseImage] = useState("");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -29,9 +28,9 @@ const BlogAdd = () => {
     type: [],
     createdAt: Timestamp.now().toDate(),
   });
-  const [data, setData] = useState([]);
-  const { id, title, description, type, image } = useParams();
+  const { id } = useParams();
   let navigate = useNavigate();
+  const[update,setUpdate] = useState()
   const [selectedCheckbox, setSelectedCheckbox] = useState([]);
 
   const [progress, setProgress] = useState(0);
@@ -53,6 +52,7 @@ const BlogAdd = () => {
   };
 
   const handleImageChange = (e) => {
+    console.log("called image ")
     setFormData({ ...formData, image: e.target.files[0] });
   };
 
@@ -63,40 +63,39 @@ const BlogAdd = () => {
       return;
     }
 
-    // const storageRef = ref(
-    //   storage,
-    //   `/images/${Date.now()}${formData.image.name}`
-    // );
+    const storageRef = ref(
+      storage,
+      `/images/${Date.now()}${formData.image.name}`
+    );
 
-    // const uploadImage = uploadBytesResumable(storageRef, formData.image);
-    // const uploadTask = storage
-    //   .ref(`/images/${formData.image.name}`)
-    //   .put(formData.image);
-    // uploadImage.on(
-    //   "state_changed",
-    //   (snapshot) => {
-    //     const progressPercent = Math.round(
-    //       (snapshot.bytesTransferred / snapshot.totalBytes) * 100
-    //     );
-    //     setProgress(progressPercent);
-    //   },
-    //   (err) => {
-    //     console.log(err);
-    //   },
-    //   () => {
-    //     setFormData({
-    //       title: "",
-    //       description: "",
-    //       image: "",
-    //       type: [],
-    //     });
+    
 
-        // getDownloadURL(uploadImage.snapshot.ref).then((url) => {
-        //   image([url]);
+    const uploadImage = uploadBytesResumable(storageRef, formData.image);
+    uploadImage.on(
+      "state_changed",
+      (snapshot) => {
+        const progressPercent = Math.round(
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+        );
+        setProgress(progressPercent);
+      },
+      (err) => {
+        console.log(err);
+      },
+      () => {
+        setFormData({
+          title: "",
+          description: "",
+          image: "",
+          type: [],
+        });
+
+        getDownloadURL(uploadImage.snapshot.ref).then((url) => {
+          // image([url]);
         //   updateDoc(auth.currentUser, { image: `${image[0]}` }).then(() => {
         //     image(image[0]);
         //   });
-          if (id===undefined) {
+          if (!id) {
             try {
               const blogRef = collection(db, "Blogs");
             
@@ -104,7 +103,7 @@ const BlogAdd = () => {
                 title: formData.title,
                 description: formData.description,
                 type: formData.type,
-                image: baseImage,
+                image: url,
                 type: selectedCheckbox,
                 createdAt: Timestamp.now().toDate(),
               });
@@ -129,7 +128,7 @@ const BlogAdd = () => {
               title: formData.title,
               description: formData.description,
               type: formData.type,
-              image: baseImage,
+              image: url,
               type: selectedCheckbox,
               createdAt: Timestamp.now().toDate(),
             });
@@ -144,32 +143,10 @@ const BlogAdd = () => {
                 toast("Error updateDoc article", { type: "error" });
               });
           }
-        // });
+        });
       }
-    // );
-  
-
-
-  const uploadImage = async (e) => {
-    const file = e.target.files[0];
-    const base64 = await convertBase64(file);
-    setBaseImage(base64);
-  };
-
-  const convertBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const fileReader = new FileReader();
-      fileReader.readAsDataURL(file);
-
-      fileReader.onload = () => {
-        resolve(fileReader.result);
-      };
-
-      fileReader.onerror = (error) => {
-        reject(error);
-      };
-    });
-  };
+    );
+    }
 
   useEffect(() => {
     id && getSingleUser();
@@ -179,10 +156,10 @@ const BlogAdd = () => {
   const getSingleUser = async () => {
     const docRef = doc(db, "Blogs", id);
     const snapshot = await getDoc(docRef);
-    console.log("fromdata", docRef);
+  
     if (snapshot.exists()) {
       setFormData({ ...snapshot.data() });
-    }
+    } 
   };
 
   return (
@@ -211,23 +188,13 @@ const BlogAdd = () => {
 
         {/* image */}
         <label htmlFor="">Image</label>
-        {/* <input
+        <input
           type="file"
           name="image"
           accept="image/*"
           className="form-control"
           onChange={(e) => handleImageChange(e)}
-        /> */}
-
-        <input
-          type="file"
-          onChange={(e) => {
-            uploadImage(e);
-          }}
         />
-        <br></br>
-        {/* <img src={`data:image/jpeg;base64,${data}`} /> */}
-        <img src={baseImage} height="200px" />
 
         <div className="chechBox mt-4">
           <p>Blog Type Select</p>
@@ -235,6 +202,7 @@ const BlogAdd = () => {
             <label key={checkbox.id}>
               {checkbox.text}
               <input
+              value={checkbox.id}
                 type="checkbox"
                 onChange={() => handleCheckChange(checkbox.text)}
                 selected={selectedCheckbox.includes(checkbox.text)}
