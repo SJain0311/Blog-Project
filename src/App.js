@@ -1,4 +1,4 @@
-import logo from "./logo.svg";
+
 import "./App.css";
 import Blog from "./component/Blogs";
 import BlogAdd from "./component/BlogAdd";

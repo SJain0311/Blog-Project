@@ -57,6 +57,7 @@ const BlogAdd = () => {
   };
 
   const handlePublish = () => {
+
     navigate("/blog");
     if (!formData.title || !formData.description) {
       alert("Please fill all the fields");
@@ -102,7 +103,7 @@ const BlogAdd = () => {
               addDoc(blogRef, {
                 title: formData.title,
                 description: formData.description,
-                type: formData.type,
+                // type: formData.type,
                 image: url,
                 type: selectedCheckbox,
                 createdAt: Timestamp.now().toDate(),
@@ -127,7 +128,7 @@ const BlogAdd = () => {
               id: id,
               title: formData.title,
               description: formData.description,
-              type: formData.type,
+              // type: formData.type,
               image: url,
               type: selectedCheckbox,
               createdAt: Timestamp.now().toDate(),
@@ -143,14 +144,16 @@ const BlogAdd = () => {
                 toast("Error updateDoc article", { type: "error" });
               });
           }
-        });
+        }).catch( (error) =>{
+          console.log(error);
+        }
+        )
       }
     );
     }
 
   useEffect(() => {
     id && getSingleUser();
-    console.log("hello", id);
   }, [id]);
 
   const getSingleUser = async () => {
